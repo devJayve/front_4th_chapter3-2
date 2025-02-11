@@ -9,11 +9,14 @@ export function generateMonthlyRepeatEvents(eventForm: EventForm) {
   const originalDate = currentDate.getDate();
 
   const shouldContinue = (date: Date) => {
+    const nextDate = new Date(date);
+    nextDate.setMonth(nextDate.getMonth() + repeat.interval, originalDate);
+
     switch (repeat.endType) {
       case RepeatEndType.ENDLESS:
-        return date <= limitDate;
+        return nextDate <= limitDate;
       case RepeatEndType.BY_DATE:
-        return date <= new Date(repeat.endDate!);
+        return nextDate <= new Date(repeat.endDate!);
       case RepeatEndType.BY_COUNT:
         return events.length < repeat.endCount!;
       default:
@@ -21,8 +24,10 @@ export function generateMonthlyRepeatEvents(eventForm: EventForm) {
     }
   };
 
+  events.push({ ...eventForm, date: currentDate.toISOString().split('T')[0] });
+
   while (shouldContinue(currentDate)) {
-    currentDate.setDate(currentDate.getMonth() + repeat.interval);
+    currentDate.setMonth(currentDate.getMonth() + repeat.interval, originalDate);
     if (currentDate.getDate() !== originalDate) {
       currentDate.setMonth(currentDate.getMonth() - 1);
       continue;
