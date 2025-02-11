@@ -2,6 +2,8 @@ import { useToast } from '@chakra-ui/react';
 
 import { createEvent, deleteEvent, getEvents, updateEvent } from '@/entities/event/lib';
 import useEventStore from '@/entities/event/store/useEventStore.ts';
+import { createEventList } from '@/entities/event-list/lib/createEventList.ts';
+import { generateRepeatEvents } from '@/features/event-form/lib/generateRepeatEvents.ts';
 import { Event, EventForm } from '@/types';
 
 export const useEventOperations = () => {
@@ -20,6 +22,18 @@ export const useEventOperations = () => {
   const handleEventCreate = async (eventFormData: EventForm) => {
     try {
       await createEvent(eventFormData);
+      await handleEventFetch();
+      showToast(`일정이 추가되었습니다.`, 'success');
+    } catch (error) {
+      showToast('일정 추가 실패', 'error', error);
+    }
+  };
+
+  const handleEventListCreate = async (eventFormData: EventForm) => {
+    try {
+      const eventFormList = generateRepeatEvents(eventFormData);
+
+      await createEventList(eventFormList);
       await handleEventFetch();
       showToast(`일정이 추가되었습니다.`, 'success');
     } catch (error) {
@@ -60,6 +74,7 @@ export const useEventOperations = () => {
   return {
     fetchEvents: handleEventFetch,
     createEvent: handleEventCreate,
+    createEventList: handleEventListCreate,
     updateEvent: handleEventUpdate,
     deleteEvent: handleEventDelete,
   };

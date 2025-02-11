@@ -38,7 +38,7 @@ export const useEventForm = () => {
   const { events, editingEvent, setEditingEvent } = useEventStore();
   const [isEditing, setIsEditing] = useState<boolean>(editingEvent !== null);
   const [eventForm, setEventForm] = useState<EventForm>(initialEventForm);
-  const { createEvent, updateEvent } = useEventOperations();
+  const { createEvent, updateEvent, createEventList } = useEventOperations();
   const [{ startTimeError, endTimeError }, setTimeError] =
     useState<TimeErrorRecord>(initialTimeError);
   const toast = useToast();
@@ -135,7 +135,11 @@ export const useEventForm = () => {
       await updateEvent(event);
       setEditingEvent(null);
     } else {
-      await createEvent(eventForm);
+      if (eventForm.repeat.type === 'none') {
+        await createEvent(eventForm);
+      } else {
+        await createEventList(eventForm);
+      }
     }
     resetForm();
   };

@@ -156,3 +156,8 @@ export function formatMinuteTime(min: number) {
 export function isLeapYear(year: number) {
   return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 }
+
+export function dayToNumber(day: string) {
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  return days.indexOf(day);
+}
