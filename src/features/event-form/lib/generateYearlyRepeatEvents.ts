@@ -10,11 +10,14 @@ export function generateYearlyRepeatEvents(eventForm: EventForm) {
   const originalDate = currentDate.getDate();
 
   const shouldContinue = (date: Date) => {
+    const nextDate = new Date(date);
+    nextDate.setFullYear(nextDate.getFullYear() + repeat.interval, originalMonth, originalDate);
+
     switch (repeat.endType) {
       case RepeatEndType.ENDLESS:
-        return date <= limitDate;
+        return nextDate <= limitDate;
       case RepeatEndType.BY_DATE:
-        return date <= new Date(repeat.endDate!);
+        return nextDate <= new Date(repeat.endDate!);
       case RepeatEndType.BY_COUNT:
         return events.length < repeat.endCount!;
       default:
@@ -22,8 +25,14 @@ export function generateYearlyRepeatEvents(eventForm: EventForm) {
     }
   };
 
+  events.push({ ...eventForm, date: currentDate.toISOString().split('T')[0] });
+
   while (shouldContinue(currentDate)) {
-    currentDate.setFullYear(currentDate.getFullYear() + repeat.interval);
+    currentDate.setFullYear(
+      currentDate.getFullYear() + repeat.interval,
+      originalMonth,
+      originalDate
+    );
     if (currentDate.getDate() !== originalDate || currentDate.getMonth() !== originalMonth) {
       continue;
     }
