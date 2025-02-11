@@ -1,10 +1,4 @@
-export type RepeatType = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
-
-export interface RepeatInfo {
-  type: RepeatType;
-  interval: number;
-  endDate?: string;
-}
+import { RepeatInfo } from '@/app/types/RepeatInfo.ts';
 
 export interface EventForm {
   title: string;
@@ -20,4 +14,9 @@ export interface EventForm {
 
 export interface Event extends EventForm {
   id: string;
+}
+
+export interface Notification {
+  id: string;
+  message: string;
 }

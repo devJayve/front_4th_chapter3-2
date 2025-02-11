@@ -4,6 +4,8 @@ import { Event } from '../types.ts';
  * 주어진 년도와 월의 일수를 반환합니다.
  */
 export function getDaysInMonth(year: number, month: number): number {
+  // 1~12월이 아닌 경우 -1 반환
+  if (month > 12 || month < 1) return -1;
   return new Date(year, month, 0).getDate();
 }
 
@@ -51,10 +53,29 @@ export function getWeeksAtMonth(currentDate: Date) {
   return weeks;
 }
 
+/**
+ * 주어진 달의 가능한 최대 위의 날짜 정보를 2차원 배열로 반환합니다.
+ */
+export function getFullWeeksAtMonth(month = 0) {
+  const maxDaysInMonth = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const lastDay = maxDaysInMonth[month];
+
+  return Array.from({ length: Math.ceil(lastDay / 7) }, (_, weekIndex) =>
+    Array.from(
+      { length: Math.min(7, lastDay - weekIndex * 7) },
+      (_, dayIndex) => weekIndex * 7 + dayIndex + 1
+    )
+  );
+}
+
 export function getEventsForDay(events: Event[], date: number): Event[] {
   return events.filter((event) => new Date(event.date).getDate() === date);
 }
 
+/**
+ * 주어진 날짜의 주차 정보를 "YYYY년 M월 N주" 형식으로 반환합니다.
+ * ISO 8601 규격에 따라 1주차는 해당 년도의 첫 번째 목요일을 기준으로 합니다.
+ */
 export function formatWeek(targetDate: Date) {
   const dayOfWeek = targetDate.getDay();
   const diffToThursday = 4 - dayOfWeek;
@@ -84,17 +105,11 @@ export function formatMonth(date: Date): string {
   return `${year}년 ${month}월`;
 }
 
-const stripTime = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
 /**
  * 주어진 날짜가 특정 범위 내에 있는지 확인합니다.
  */
 export function isDateInRange(date: Date, rangeStart: Date, rangeEnd: Date): boolean {
-  const normalizedDate = stripTime(date);
-  const normalizedStart = stripTime(rangeStart);
-  const normalizedEnd = stripTime(rangeEnd);
-
-  return normalizedDate >= normalizedStart && normalizedDate <= normalizedEnd;
+  return date >= rangeStart && date <= rangeEnd;
 }
 
 export function fillZero(value: number, size = 2) {
@@ -107,4 +122,37 @@ export function formatDate(currentDate: Date, day?: number) {
     fillZero(currentDate.getMonth() + 1),
     fillZero(day ?? currentDate.getDate()),
   ].join('-');
+}
+
+export function formatMinuteTime(min: number) {
+  if (min <= 0) return 'Invalid Minutes';
+  if (min >= 1440) {
+    const days = Math.floor(min / 1440);
+    const remainingMinutes = min % 1440;
+    const hours = Math.floor(remainingMinutes / 60);
+    const minutes = remainingMinutes % 60;
+
+    if (hours === 0 && minutes === 0) {
+      return `${days}일`;
+    } else if (minutes === 0) {
+      return `${days}일 ${hours}시간`;
+    } else if (hours === 0) {
+      return `${days}일 ${minutes}분`;
+    }
+    return `${days}일 ${hours}시간 ${minutes}분`;
+  }
+  if (min >= 60) {
+    const hours = Math.floor(min / 60);
+    const minutes = min % 60;
+
+    if (minutes === 0) {
+      return `${hours}시간`;
+    }
+    return `${hours}시간 ${minutes}분`;
+  }
+  return `${min}분`;
+}
+
+export function isLeapYear(year: number) {
+  return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
 }

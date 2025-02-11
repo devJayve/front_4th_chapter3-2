@@ -10,3 +10,17 @@ export const parseHM = (timestamp: number) => {
   const m = fillZero(date.getMinutes());
   return `${h}:${m}`;
 };
+
+export const isSameMonth = (date1: Date | string, date2: Date | string) => {
+  const originDate = date1 instanceof Date ? date1 : new Date(date1);
+  const compareDate = date2 instanceof Date ? date2 : new Date(date2);
+
+  if (isNaN(originDate.getTime()) || isNaN(compareDate.getTime())) {
+    return false;
+  }
+
+  return (
+    originDate.getFullYear() === compareDate.getFullYear() &&
+    originDate.getMonth() === compareDate.getMonth()
+  );
+};

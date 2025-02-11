@@ -16,7 +16,7 @@ export const useNotifications = (events: Event[]) => {
       ...prev,
       ...upcomingEvents.map((event) => ({
         id: event.id,
-        message: createNotificationMessage(event),
+        message: createNotificationMessage({ event, now }),
       })),
     ]);
 
