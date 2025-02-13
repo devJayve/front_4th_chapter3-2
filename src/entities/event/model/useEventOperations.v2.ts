@@ -38,6 +38,7 @@ export const useEventOperations = () => {
       showToast(`일정이 추가되었습니다.`, 'success');
     } catch (error) {
       showToast('일정 추가 실패', 'error', error);
+      throw error;
     }
   };
 

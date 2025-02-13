@@ -29,16 +29,24 @@ export const setupMockHandlerCreation = (initEvents = [] as Event[]) => {
 
       return HttpResponse.json(newEvent, { status: 201 });
     }),
-    http.post('/api/events/list', async ({ request }) => {
-      const eventForm = (await request.json()) as EventForm;
-      const newEvent: Event = {
-        id: crypto.randomUUID(),
-        ...eventForm,
-      };
+    http.post('/api/events-list', async ({ request }) => {
+      const eventForms = (await request.json()) as EventForm[];
+      const repeatId = crypto.randomUUID();
+      const newEvents = eventForms.map((event) => {
+        const isRepeatEvent = event.repeat.type !== 'none';
+        return {
+          id: crypto.randomUUID(),
+          ...event,
+          repeat: {
+            ...event.repeat,
+            id: isRepeatEvent ? repeatId : undefined,
+          },
+        };
+      });
 
-      events = [...events, newEvent];
+      events = [...events, ...newEvents];
 
-      return HttpResponse.json(newEvent, { status: 201 });
+      return HttpResponse.json(newEvents, { status: 201 });
     }),
   ];
 

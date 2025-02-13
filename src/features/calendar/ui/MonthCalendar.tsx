@@ -1,4 +1,4 @@
-import { BellIcon } from '@chakra-ui/icons';
+import { BellIcon, RepeatIcon } from '@chakra-ui/icons';
 import {
   Box,
   Heading,
@@ -70,6 +70,7 @@ function MonthCalendar({
                         )}
                         {getEventsForDay(filteredEvents, day).map((event) => {
                           const isNotified = notifiedEvents.includes(event.id);
+                          const isRepeatEvent = event.repeat.type !== 'none';
                           return (
                             <Box
                               key={event.id}
@@ -81,6 +82,7 @@ function MonthCalendar({
                               color={isNotified ? 'red.500' : 'inherit'}
                             >
                               <HStack spacing={1}>
+                                {isRepeatEvent && <RepeatIcon />}
                                 {isNotified && <BellIcon />}
                                 <Text fontSize="sm" noOfLines={1}>
                                   {event.title}

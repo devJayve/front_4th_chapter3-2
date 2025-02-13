@@ -9,7 +9,7 @@ import {
   Select,
   VStack,
 } from '@chakra-ui/react';
-import { useState } from 'react';
+import { ChangeEvent } from 'react';
 
 import { DayOfWeek, RepeatEndType, RepeatInfo, RepeatType } from '@/app/types/RepeatInfo.ts';
 
@@ -19,10 +19,9 @@ interface RepeatSettingProps {
 }
 
 function RepeatSetting({ repeatInfo, updateRepeatInfo }: RepeatSettingProps) {
-  const [showRepeatInfo, setShowRepeatInfo] = useState(false);
-
   // 반복 종료 설정 변경 (종료 없음, 날짜, 횟수)
   const handleRepeatEndTypeChange = (endType: RepeatEndType) => {
+    console.log('endtype 변경:', endType);
     updateRepeatInfo({ endType: endType });
 
     if (endType === RepeatEndType.BY_COUNT) {
@@ -33,15 +32,19 @@ function RepeatSetting({ repeatInfo, updateRepeatInfo }: RepeatSettingProps) {
     }
   };
 
+  const handleShowRepeatInfo = (e: ChangeEvent<HTMLInputElement>) => {
+    updateRepeatInfo({ type: e.target.checked ? 'daily' : 'none' });
+  };
+
   return (
     <>
       <FormControl>
         <FormLabel>반복 설정</FormLabel>
-        <Checkbox isChecked={showRepeatInfo} onChange={(e) => setShowRepeatInfo(e.target.checked)}>
+        <Checkbox isChecked={repeatInfo.type !== 'none'} onChange={handleShowRepeatInfo}>
           반복 일정
         </Checkbox>
       </FormControl>
-      {showRepeatInfo && (
+      {repeatInfo.type !== 'none' && (
         <VStack width="100%">
           <HStack width="100%">
             <FormControl>

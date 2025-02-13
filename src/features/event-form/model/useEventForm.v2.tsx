@@ -23,6 +23,7 @@ const initialEventForm: EventForm = {
   repeat: {
     type: 'none',
     interval: 1,
+    endType: RepeatEndType.ENDLESS,
   },
   notificationTime: 10,
 };
@@ -128,18 +129,23 @@ export const useEventForm = () => {
   };
 
   const uploadEvent = async () => {
-    if (isEditing && editingEvent?.id) {
-      const event: Event = { ...eventForm, id: editingEvent?.id };
-      await updateEvent(event);
-      setEditingEvent(null);
-    } else {
-      if (eventForm.repeat.type === 'none') {
-        await createEvent(eventForm);
+    try {
+      if (isEditing && editingEvent?.id) {
+        const event: Event = { ...eventForm, id: editingEvent?.id };
+        await updateEvent(event);
+        setEditingEvent(null);
       } else {
-        await createEventList(eventForm);
+        console.log(`eventForm`, eventForm);
+        if (eventForm.repeat.type === 'none') {
+          await createEvent(eventForm);
+        } else {
+          await createEventList(eventForm);
+        }
       }
+      resetForm();
+    } catch (error) {
+      console.error(error);
     }
-    resetForm();
   };
 
   return {
