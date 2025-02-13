@@ -26,6 +26,8 @@ export default mergeConfig(
       globals: true,
       environment: 'jsdom',
       setupFiles: './src/setupTests.ts',
+      include: ['src/__tests__/**/*.spec.{js,ts,jsx,tsx}'],
+      exclude: ['src/__tests__/**/utils.ts'],
       coverage: {
         reportsDirectory: './.coverage',
         reporter: ['lcov', 'json', 'json-summary'],
