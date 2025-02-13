@@ -8,7 +8,7 @@ interface MockError {
   message?: string | null;
 }
 
-interface EventFormListBody {
+export interface EventFormListBody {
   events: EventForm[];
 }
 
@@ -29,9 +29,7 @@ export const setupMockHandlerCreation = (initEvents = [] as Event[]) => {
         ...eventForm,
       };
 
-      console.log('before', events);
       events = [...events, newEvent];
-      console.log('after', events);
 
       return HttpResponse.json(newEvent, { status: 201 });
     }),

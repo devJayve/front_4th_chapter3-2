@@ -1,9 +1,12 @@
 import { http, HttpResponse } from 'msw';
 
 import { Event, EventForm } from '../types';
-import { events as initialEvents } from './response/events.json' assert { type: 'json' };
+// import { events as initialEvents } from './response/events.json' assert { type: 'json' };
 
-let events: Event[] = initialEvents as Event[];
+import { EventFormListBody } from '@/__mocks__/handlersUtils.ts';
+
+// let events: Event[] = initialEvents as Event[];
+let events: Event[] = [];
 
 // ! HARD
 // ! 각 응답에 대한 MSW 핸들러를 작성해주세요. GET 요청은 이미 작성되어 있는 events json을 활용해주세요.
@@ -24,6 +27,38 @@ export const handlers = [
     events = [...events, newEvent];
 
     return HttpResponse.json(newEvent, { status: 201 });
+  }),
+
+  http.post('/api/events-list', async ({ request }) => {
+    try {
+      const body = (await request.json()) as EventFormListBody;
+      const eventForms = body.events as EventForm[]; // body.events로 접근
+
+      console.log('이벤트폼 정보', eventForms);
+      const repeatId = crypto.randomUUID();
+      const newEvents: Event[] = eventForms.map((event) => {
+        const isRepeatEvent = event.repeat.type !== 'none';
+        return {
+          id: crypto.randomUUID(),
+          ...event,
+          repeat: {
+            ...event.repeat,
+            id: isRepeatEvent ? repeatId : undefined,
+          },
+        };
+      });
+
+      console.log('newEvents', newEvents);
+
+      console.log('before', events);
+      events = [...events, ...newEvents];
+      console.log('after', events);
+
+      return HttpResponse.json(newEvents, { status: 201 });
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   }),
 
   // 이벤트 수정
