@@ -29,6 +29,17 @@ export const setupMockHandlerCreation = (initEvents = [] as Event[]) => {
 
       return HttpResponse.json(newEvent, { status: 201 });
     }),
+    http.post('/api/events/list', async ({ request }) => {
+      const eventForm = (await request.json()) as EventForm;
+      const newEvent: Event = {
+        id: crypto.randomUUID(),
+        ...eventForm,
+      };
+
+      events = [...events, newEvent];
+
+      return HttpResponse.json(newEvent, { status: 201 });
+    }),
   ];
 
   server.use(...handlers);

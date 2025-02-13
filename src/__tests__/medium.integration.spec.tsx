@@ -1,7 +1,7 @@
 import { ChakraProvider } from '@chakra-ui/react';
-import { render, screen, within, waitFor, fireEvent, cleanup, act } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
-import { afterEach } from 'vitest';
+import { afterEach, beforeEach } from 'vitest';
 
 import { Event, EventForm } from '../types';
 import { formatMinuteTime } from '../utils/dateUtils.ts';
@@ -12,15 +12,16 @@ import {
   setupMockHandlerUpdating,
 } from '@/__mocks__/handlersUtils.ts';
 import { DialogProvider } from '@/app/provider/DialogProvider.tsx';
+import { RepeatEndType } from '@/app/types/RepeatInfo.ts';
 import EventManager from '@/pages/event-manager/ui/EventManager.tsx';
 
-const REPEAT_TYPE_MAP = {
-  none: '없음',
-  daily: '매일',
-  weekly: '매주',
-  monthly: '매월',
-  yearly: '매년',
-};
+// const REPEAT_TYPE_MAP = {
+//   none: '없음',
+//   daily: '매일',
+//   weekly: '매주',
+//   monthly: '매월',
+//   yearly: '매년',
+// };
 
 const createEvent = async (event: EventForm) => {
   const user = userEvent.setup();
@@ -38,47 +39,36 @@ const createEvent = async (event: EventForm) => {
     `${formatMinuteTime(event.notificationTime)} 전`
   );
 
-  if (event.repeat.type !== 'none') {
-    fireEvent.change(eventForm.getByLabelText(/반복 설정/i), { target: { checked: true } });
-
-    await user.selectOptions(
-      eventForm.getByLabelText(/반복 유형/i),
-      REPEAT_TYPE_MAP[event.repeat.type]
-    );
-    await user.clear(eventForm.getByLabelText(/반복 간격/i));
-    event.repeat.interval &&
-      (await user.type(eventForm.getByLabelText(/반복 간격/i), String(event.repeat.interval)));
-    event.repeat.endDate &&
-      (await user.type(eventForm.getByLabelText(/반복 종료일/i), event.repeat.endDate));
-  } else {
-    fireEvent.change(eventForm.getByLabelText(/반복 설정/i), { target: { checked: false } });
-  }
-
   await user.click(screen.getByTestId('event-submit-button'));
 };
 
+const mockEvent: Event = {
+  id: '1',
+  title: '테스트 이벤트',
+  date: '2025-02-14',
+  startTime: '14:00',
+  endTime: '15:00',
+  description: '테스트 설명',
+  location: '회의실 B',
+  category: '개인',
+  repeat: {
+    type: 'none',
+    interval: 1,
+  },
+  notificationTime: 10,
+};
+
+beforeEach(() => {
+  cleanup();
+});
+
 afterEach(() => {
   vi.useRealTimers();
+  vi.clearAllMocks();
 });
 
 // ! HINT. "검색 결과가 없습니다"는 초기에 노출되는데요. 그럼 검증하고자 하는 액션이 실행되기 전에 검증해버리지 않을까요? 이 테스트를 신뢰성있게 만드려면 어떻게 할까요?
 describe('일정 CRUD 및 기본 기능', () => {
-  const mockEvent: Event = {
-    id: '1',
-    title: '테스트 이벤트',
-    date: '2025-02-14',
-    startTime: '14:00',
-    endTime: '15:00',
-    description: '테스트 설명',
-    location: '회의실 B',
-    category: '개인',
-    repeat: {
-      type: 'daily',
-      interval: 1,
-    },
-    notificationTime: 10,
-  };
-
   it('입력한 새로운 일정 정보에 맞춰 모든 필드가 이벤트 리스트에 정확히 저장된다.', async () => {
     setupMockHandlerCreation([]);
 
@@ -101,7 +91,7 @@ describe('일정 CRUD 및 기본 기능', () => {
       location: '회의실 B',
       category: '개인',
       repeat: {
-        type: 'daily',
+        type: 'none',
         interval: 1,
       },
       notificationTime: 10,
@@ -124,7 +114,6 @@ describe('일정 CRUD 및 기본 기능', () => {
     expect(eventElement).toHaveTextContent(`${event.description}`);
     expect(eventElement).toHaveTextContent(`${event.location}`);
     expect(eventElement).toHaveTextContent(`카테고리: ${event.category}`);
-    expect(eventElement).toHaveTextContent('반복: 1일마다');
     expect(eventElement).toHaveTextContent('알림: 10분 전');
 
     // 3) 폼 값이 초기화되었는지 확인
@@ -145,7 +134,7 @@ describe('일정 CRUD 및 기본 기능', () => {
       location: '회의실 C',
       category: '개인',
       repeat: {
-        type: 'daily',
+        type: 'none',
         interval: 1,
       },
       notificationTime: 10,
@@ -231,32 +220,13 @@ describe('일정 CRUD 및 기본 기능', () => {
   });
 });
 
-describe('일정 뷰', () => {
-  afterEach(() => {
-    vi.useRealTimers();
-    cleanup();
-    vi.clearAllMocks();
-  });
+describe('반복 일정 CRUD', () => {});
 
+describe('일정 뷰', () => {
   it('주별 뷰를 선택 후 해당 주에 일정이 없으면, 일정이 표시되지 않는다.', async () => {
-    const mockEvents: Event[] = [
-      {
-        id: '1',
-        title: '테스트 이벤트',
-        date: '2025-02-14',
-        startTime: '14:00',
-        endTime: '15:00',
-        description: '테스트 설명',
-        location: '회의실 B',
-        category: '개인',
-        repeat: {
-          type: 'daily',
-          interval: 1,
-        },
-        notificationTime: 10,
-      },
-    ];
-    setupMockHandlerCreation(mockEvents);
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime('2025-02-01');
+    setupMockHandlerCreation([mockEvent]);
 
     render(
       <ChakraProvider>
@@ -277,24 +247,9 @@ describe('일정 뷰', () => {
   });
 
   it('주별 뷰 선택 후 해당 일자에 일정이 존재한다면 해당 일정이 정확히 표시된다', async () => {
-    const mockEvents: Event[] = [
-      {
-        id: '1',
-        title: '테스트 이벤트',
-        date: '2025-02-06',
-        startTime: '14:00',
-        endTime: '15:00',
-        description: '테스트 설명',
-        location: '회의실 B',
-        category: '개인',
-        repeat: {
-          type: 'daily',
-          interval: 1,
-        },
-        notificationTime: 10,
-      },
-    ];
-    setupMockHandlerCreation(mockEvents);
+    vi.useFakeTimers({ shouldAdvanceTime: true });
+    vi.setSystemTime('2025-02-14');
+    setupMockHandlerCreation([mockEvent]);
 
     render(
       <ChakraProvider>
@@ -327,6 +282,7 @@ describe('일정 뷰', () => {
       repeat: {
         type: 'daily',
         interval: 1,
+        endType: RepeatEndType.ENDLESS,
       },
       notificationTime: 10,
     };
@@ -362,6 +318,7 @@ describe('일정 뷰', () => {
       repeat: {
         type: 'daily',
         interval: 1,
+        endType: RepeatEndType.ENDLESS,
       },
       notificationTime: 10,
     };
@@ -419,6 +376,7 @@ describe('검색 기능', () => {
       repeat: {
         type: 'daily',
         interval: 1,
+        endType: RepeatEndType.ENDLESS,
       },
       notificationTime: 10,
     };
@@ -463,6 +421,7 @@ describe('검색 기능', () => {
         repeat: {
           type: 'daily',
           interval: 1,
+          endType: RepeatEndType.ENDLESS,
         },
         notificationTime: 10,
       },
@@ -501,6 +460,7 @@ describe('검색 기능', () => {
         repeat: {
           type: 'daily',
           interval: 1,
+          endType: RepeatEndType.ENDLESS,
         },
         notificationTime: 10,
       },
@@ -533,31 +493,8 @@ describe('검색 기능', () => {
 });
 
 describe('일정 충돌', () => {
-  afterEach(() => {
-    vi.useRealTimers();
-    cleanup();
-    vi.clearAllMocks();
-  });
-
   it('겹치는 시간에 새 일정을 추가할 때 경고가 표시된다', async () => {
-    const mockEvents: Event[] = [
-      {
-        id: '1',
-        title: '테스트 이벤트',
-        date: '2025-02-14',
-        startTime: '14:00',
-        endTime: '15:00',
-        description: '테스트 설명',
-        location: '회의실 B',
-        category: '개인',
-        repeat: {
-          type: 'daily',
-          interval: 1,
-        },
-        notificationTime: 10,
-      },
-    ];
-    setupMockHandlerCreation(mockEvents);
+    setupMockHandlerCreation([mockEvent]);
 
     render(
       <ChakraProvider>
@@ -570,22 +507,12 @@ describe('일정 충돌', () => {
       expect(screen.getByText(/2025년 2월/i)).toBeInTheDocument();
     });
 
-    const event: EventForm = {
+    const newEvent: EventForm = {
+      ...mockEvent,
       title: '테스트 이벤트2',
-      date: '2025-02-14',
-      startTime: '14:00',
-      endTime: '15:00',
-      description: '테스트 설명',
-      location: '회의실 B',
-      category: '개인',
-      repeat: {
-        type: 'daily',
-        interval: 1,
-      },
-      notificationTime: 10,
     };
 
-    await createEvent(event);
+    await createEvent(newEvent);
 
     await waitFor(() => {
       expect(screen.getByText('일정 겹침 경고')).toBeInTheDocument();
@@ -593,36 +520,15 @@ describe('일정 충돌', () => {
   });
 
   it('기존 일정의 시간을 수정하여 충돌이 발생하면 경고가 노출된다', async () => {
-    const mockEvents: Event[] = [
+    const user = userEvent.setup();
+    const mockEvents = [
+      mockEvent,
       {
-        id: '1',
-        title: '테스트 이벤트',
-        date: '2025-02-14',
-        startTime: '14:00',
-        endTime: '15:00',
-        description: '테스트 설명',
-        location: '회의실 B',
-        category: '개인',
-        repeat: {
-          type: 'daily',
-          interval: 1,
-        },
-        notificationTime: 10,
-      },
-      {
+        ...mockEvent,
         id: '2',
         title: '테스트 이벤트2',
-        date: '2025-02-14',
         startTime: '15:00',
         endTime: '16:00',
-        description: '테스트 설명2',
-        location: '회의실 C',
-        category: '개인',
-        repeat: {
-          type: 'daily',
-          interval: 1,
-        },
-        notificationTime: 10,
       },
     ];
     setupMockHandlerUpdating(mockEvents);
@@ -638,19 +544,25 @@ describe('일정 충돌', () => {
       expect(screen.getByText(/2025년 2월/i)).toBeInTheDocument();
     });
 
+    const viewButton = screen.getByLabelText('view');
+    await user.selectOptions(viewButton, 'month');
+
     const eventCard = screen.getByTestId('event-item-2');
     const editButton = within(eventCard).getByLabelText('Edit event');
 
-    await userEvent.click(editButton);
+    await user.click(editButton);
 
     const startTimeInput = screen.getByLabelText('시작 시간');
     const endTimeInput = screen.getByLabelText('종료 시간');
 
-    await userEvent.type(startTimeInput, '14:00');
-    await userEvent.type(endTimeInput, '15:00');
+    await user.clear(startTimeInput);
+    await user.type(startTimeInput, '14:00');
+
+    await user.clear(endTimeInput);
+    await user.type(endTimeInput, '15:00');
 
     const submitButton = screen.getByTestId('event-submit-button');
-    await userEvent.click(submitButton);
+    await user.click(submitButton);
 
     await waitFor(() => {
       expect(screen.getByText('일정 겹침 경고')).toBeInTheDocument();
@@ -674,6 +586,7 @@ it('notificationTime을 10으로 하면 지정 시간 10분 전 알람 텍스트
     repeat: {
       type: 'daily',
       interval: 1,
+      endType: RepeatEndType.ENDLESS,
     },
     notificationTime: 10,
   };

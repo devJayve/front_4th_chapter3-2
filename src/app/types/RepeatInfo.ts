@@ -15,28 +15,12 @@ export enum RepeatEndType {
   BY_COUNT = 'BY_COUNT',
 }
 
-export interface BaseRepeatInfo {
+export interface RepeatInfo {
   id?: string;
   type: RepeatType;
   interval: number;
   dayOfWeek?: DayOfWeek;
-}
-
-// 종료 없음
-export interface EndlessRepeatInfo extends BaseRepeatInfo {
-  endType: RepeatEndType.ENDLESS;
-}
-
-// 날짜로 종료
-export interface DateEndRepeatInfo extends BaseRepeatInfo {
-  endType: RepeatEndType.BY_DATE;
+  endType?: RepeatEndType;
   endDate?: string;
-}
-
-// 횟수로 종료
-export interface CountEndRepeatInfo extends BaseRepeatInfo {
-  endType: RepeatEndType.BY_COUNT;
   endCount?: number;
 }
-
-export type RepeatInfo = EndlessRepeatInfo | DateEndRepeatInfo | CountEndRepeatInfo;

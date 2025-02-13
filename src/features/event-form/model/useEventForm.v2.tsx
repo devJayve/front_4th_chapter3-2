@@ -21,10 +21,8 @@ const initialEventForm: EventForm = {
   location: '',
   category: '',
   repeat: {
-    type: 'daily',
+    type: 'none',
     interval: 1,
-    endType: RepeatEndType.BY_DATE,
-    endDate: '2025-06-30',
   },
   notificationTime: 10,
 };

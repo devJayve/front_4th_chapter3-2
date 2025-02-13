@@ -14,6 +14,8 @@ import {
   isDateInRange,
 } from '../../utils/dateUtils';
 
+import { RepeatEndType } from '@/app/types/RepeatInfo.ts';
+
 describe('getDaysInMonth', () => {
   it('1월은 31일 수를 반환한다', () => {
     expect(getDaysInMonth(2023, 1)).toBe(31);
@@ -169,6 +171,7 @@ describe('getEventsForDay', () => {
       repeat: {
         type: 'daily',
         interval: 10,
+        endType: RepeatEndType.ENDLESS,
       },
       notificationTime: 30,
     },
@@ -184,6 +187,7 @@ describe('getEventsForDay', () => {
       repeat: {
         type: 'weekly',
         interval: 1,
+        endType: RepeatEndType.ENDLESS,
       },
       notificationTime: 15,
     },
@@ -199,6 +203,7 @@ describe('getEventsForDay', () => {
       repeat: {
         type: 'none',
         interval: 1,
+        endType: RepeatEndType.ENDLESS,
       },
       notificationTime: 60,
     },
@@ -214,6 +219,7 @@ describe('getEventsForDay', () => {
       repeat: {
         type: 'monthly',
         interval: 2,
+        endType: RepeatEndType.ENDLESS,
       },
       notificationTime: 10,
     },

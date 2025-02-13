@@ -4,6 +4,8 @@ import { Event } from '../../types';
 import { getFilteredEvents } from '../../utils/eventUtils';
 import { isSameMonth } from '../utils.ts';
 
+import { RepeatEndType } from '@/app/types/RepeatInfo.ts';
+
 const events: Event[] = [
   {
     id: '1',
@@ -38,7 +40,7 @@ const events: Event[] = [
     description: '팀 워크샵',
     location: 'WORK Center',
     category: 'workshop',
-    repeat: { type: 'monthly', interval: 1, endDate: '2024-12-31' },
+    repeat: { type: 'monthly', interval: 1, endDate: '2024-12-31', endType: RepeatEndType.BY_DATE },
     notificationTime: 60,
   },
   {
@@ -50,7 +52,7 @@ const events: Event[] = [
     description: 'Daily work sync',
     location: '스크럼실',
     category: 'daily',
-    repeat: { type: 'daily', interval: 1, endDate: '2024-07-31' },
+    repeat: { type: 'daily', interval: 1, endDate: '2024-07-31', endType: RepeatEndType.BY_DATE },
     notificationTime: 15,
   },
   {
@@ -86,7 +88,7 @@ const events: Event[] = [
     description: 'Previous work planning',
     location: 'Work Center',
     category: 'workshop',
-    repeat: { type: 'yearly', interval: 1, endDate: '2025-07-15' },
+    repeat: { type: 'yearly', interval: 1, endDate: '2025-07-15', endType: RepeatEndType.BY_DATE },
     notificationTime: 120,
   },
   {
@@ -110,7 +112,7 @@ const events: Event[] = [
     description: '주간 운동 모임',
     location: '체육관',
     category: 'health',
-    repeat: { type: 'weekly', interval: 1, endDate: '2024-08-30' },
+    repeat: { type: 'weekly', interval: 1, endDate: '2024-08-30', endType: RepeatEndType.BY_DATE },
     notificationTime: 30,
   },
   {
