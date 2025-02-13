@@ -70,20 +70,23 @@ function RepeatSetting({ repeatInfo, updateRepeatInfo }: RepeatSettingProps) {
             </FormControl>
           </HStack>
           {repeatInfo.type === 'weekly' && (
-            <RadioGroup
-              defaultValue="M"
-              onChange={(value) => updateRepeatInfo({ dayOfWeek: value as DayOfWeek })}
-            >
-              <HStack gap="4">
-                <Radio value="sunday">S</Radio>
-                <Radio value="monday">M</Radio>
-                <Radio value="tuesday">T</Radio>
-                <Radio value="wedsday">W</Radio>
-                <Radio value="thursday">T</Radio>
-                <Radio value="friday">F</Radio>
-                <Radio value="saturday">S</Radio>
-              </HStack>
-            </RadioGroup>
+            <FormControl>
+              <FormLabel>반복 요일</FormLabel>
+              <RadioGroup
+                defaultValue="M"
+                onChange={(value) => updateRepeatInfo({ dayOfWeek: value as DayOfWeek })}
+              >
+                <HStack gap="4">
+                  <Radio value="sunday">S</Radio>
+                  <Radio value="monday">M</Radio>
+                  <Radio value="tuesday">T</Radio>
+                  <Radio value="wedsday">W</Radio>
+                  <Radio value="thursday">T</Radio>
+                  <Radio value="friday">F</Radio>
+                  <Radio value="saturday">S</Radio>
+                </HStack>
+              </RadioGroup>
+            </FormControl>
           )}
           <FormControl>
             <FormLabel>반복 종료일</FormLabel>
@@ -97,18 +100,24 @@ function RepeatSetting({ repeatInfo, updateRepeatInfo }: RepeatSettingProps) {
             </Select>
           </FormControl>
           {repeatInfo.endType === RepeatEndType.BY_DATE && (
-            <Input
-              type="date"
-              value={repeatInfo.endDate}
-              onChange={(e) => updateRepeatInfo({ endDate: e.target.value })}
-            />
+            <FormControl>
+              <FormLabel>반복 종료 날짜</FormLabel>
+              <Input
+                type="date"
+                value={repeatInfo.endDate}
+                onChange={(e) => updateRepeatInfo({ endDate: e.target.value })}
+              />
+            </FormControl>
           )}
           {repeatInfo.endType === RepeatEndType.BY_COUNT && (
-            <Input
-              type="number"
-              value={repeatInfo.endCount}
-              onChange={(e) => updateRepeatInfo({ endCount: Number(e.target.value) })}
-            />
+            <FormControl>
+              <FormLabel>반복 종료 횟수</FormLabel>
+              <Input
+                type="number"
+                value={repeatInfo.endCount}
+                onChange={(e) => updateRepeatInfo({ endCount: Number(e.target.value) })}
+              />
+            </FormControl>
           )}
         </VStack>
       )}

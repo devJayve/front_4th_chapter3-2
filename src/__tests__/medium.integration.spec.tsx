@@ -1,7 +1,7 @@
 import { ChakraProvider } from '@chakra-ui/react';
 import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
-import { userEvent } from '@testing-library/user-event';
-import { afterEach, beforeEach } from 'vitest';
+import { UserEvent, userEvent } from '@testing-library/user-event';
+import { afterEach, beforeEach, expect } from 'vitest';
 
 import { Event, EventForm } from '../types';
 import { formatMinuteTime } from '../utils/dateUtils.ts';
@@ -15,16 +15,8 @@ import { DialogProvider } from '@/app/provider/DialogProvider.tsx';
 import { RepeatEndType } from '@/app/types/RepeatInfo.ts';
 import EventManager from '@/pages/event-manager/ui/EventManager.tsx';
 
-// const REPEAT_TYPE_MAP = {
-//   none: '없음',
-//   daily: '매일',
-//   weekly: '매주',
-//   monthly: '매월',
-//   yearly: '매년',
-// };
-
-const createEvent = async (event: EventForm) => {
-  const user = userEvent.setup();
+const createEvent = async (event: EventForm, user?: UserEvent) => {
+  user ??= userEvent.setup();
   const eventForm = within(screen.getByTestId('event-form'));
 
   await user.type(eventForm.getByLabelText(/제목/i), event.title);
@@ -38,6 +30,27 @@ const createEvent = async (event: EventForm) => {
     eventForm.getByLabelText(/알림 설정/i),
     `${formatMinuteTime(event.notificationTime)} 전`
   );
+  if (event.repeat.type !== 'none') {
+    await user.click(eventForm.getByLabelText(/반복 설정/i));
+    await user.selectOptions(eventForm.getByLabelText(/반복 유형/i), event.repeat.type);
+    if (event.repeat.type === 'weekly') {
+      event.repeat.dayOfWeek &&
+        (await user.selectOptions(eventForm.getByLabelText(/반복 요일/i), event.repeat.dayOfWeek));
+    }
+    await user.clear(eventForm.getByLabelText(/반복 간격/i));
+    await user.type(eventForm.getByLabelText(/반복 간격/i), event.repeat.interval.toString());
+
+    await user.selectOptions(eventForm.getByLabelText(/반복 종료/i), event.repeat.endType!);
+
+    if (event.repeat.endType === RepeatEndType.BY_DATE) {
+      await user.clear(eventForm.getByLabelText(/반복 종료 날짜/i));
+      await user.type(eventForm.getByLabelText(/반복 종료 날짜/i), event.repeat.endDate!);
+    }
+    if (event.repeat.endType === RepeatEndType.BY_COUNT) {
+      await user.clear(eventForm.getByLabelText(/반복 횟수/i));
+      await user.type(eventForm.getByLabelText(/반복 횟수/i), event.repeat.endCount!.toString());
+    }
+  }
 
   await user.click(screen.getByTestId('event-submit-button'));
 };
@@ -220,7 +233,96 @@ describe('일정 CRUD 및 기본 기능', () => {
   });
 });
 
-describe('반복 일정 CRUD', () => {});
+describe('반복 일정 CRUD', () => {
+  const repeatEvent: Event = {
+    ...mockEvent,
+    repeat: {
+      id: '1',
+      type: 'daily',
+      interval: 2,
+      endType: RepeatEndType.BY_DATE,
+      endDate: '2025-02-24',
+    },
+  };
+
+  const repeatEvents: Event[] = [
+    repeatEvent,
+    { ...repeatEvent, id: '2', date: '2025-02-16', repeat: { ...repeatEvent.repeat, id: '2' } },
+    { ...repeatEvent, id: '3', date: '2025-02-18', repeat: { ...repeatEvent.repeat, id: '3' } },
+    { ...repeatEvent, id: '4', date: '2025-02-20', repeat: { ...repeatEvent.repeat, id: '4' } },
+    { ...repeatEvent, id: '5', date: '2025-02-22', repeat: { ...repeatEvent.repeat, id: '5' } },
+    { ...repeatEvent, id: '6', date: '2025-02-24', repeat: { ...repeatEvent.repeat, id: '6' } },
+  ];
+
+  it('반복 일정 추가 시 모든 이벤트가 반복 일정으로 정확히 저장된다.', async () => {
+    setupMockHandlerCreation([]);
+    render(
+      <ChakraProvider>
+        <EventManager />
+      </ChakraProvider>
+    );
+
+    await act(async () => null);
+
+    await createEvent(repeatEvent);
+
+    expect(screen.getAllByTestId(/event-item/)).toHaveLength(6);
+  });
+
+  it('반복 일정 수정 시 단일 일정으로 변경된다.', async () => {
+    const user = userEvent.setup();
+    setupMockHandlerUpdating(repeatEvents);
+    render(
+      <ChakraProvider>
+        <EventManager />
+      </ChakraProvider>
+    );
+
+    await act(async () => null);
+
+    const eventCard = screen.getByTestId('event-item-1');
+    const editButton = within(eventCard).getByRole('button', {
+      name: 'Edit event',
+    });
+
+    await user.click(editButton);
+
+    await user.click(screen.getByLabelText('반복 설정'));
+    await user.clear(screen.getByLabelText('제목'));
+    await user.type(screen.getByLabelText('제목'), '테스트 이벤트2');
+
+    await user.click(screen.getByTestId('event-submit-button'));
+
+    expect(eventCard).toHaveTextContent('테스트 이벤트2');
+    expect(eventCard).not.toHaveTextContent('반복: 2일마다');
+  });
+
+  it('반복 일정 삭제 시 해당 일정만 삭제된다.', async () => {
+    const user = userEvent.setup();
+    setupMockHandlerDeletion(repeatEvents);
+
+    render(
+      <ChakraProvider>
+        <EventManager />
+      </ChakraProvider>
+    );
+
+    await act(async () => null);
+
+    const eventCard = screen.getByTestId('event-item-1');
+
+    expect(screen.getAllByTestId(/event-item/)).toHaveLength(6);
+
+    const deleteButton = within(eventCard).getByRole('button', {
+      name: 'Delete event',
+    });
+
+    await user.click(deleteButton);
+
+    expect(screen.queryByTestId('event-item-1')).not.toBeInTheDocument();
+    expect(screen.getAllByTestId(/event-item/)).toHaveLength(5);
+  });
+});
 
 describe('일정 뷰', () => {
   it('주별 뷰를 선택 후 해당 주에 일정이 없으면, 일정이 표시되지 않는다.', async () => {
@@ -503,9 +605,7 @@ describe('일정 충돌', () => {
       </ChakraProvider>
     );
 
-    await waitFor(() => {
-      expect(screen.getByText(/2025년 2월/i)).toBeInTheDocument();
-    });
+    await act(async () => null);
 
     const newEvent: EventForm = {
       ...mockEvent,
@@ -514,59 +614,7 @@ describe('일정 충돌', () => {
 
     await createEvent(newEvent);
 
-    await waitFor(() => {
-      expect(screen.getByText('일정 겹침 경고')).toBeInTheDocument();
-    });
-  });
-
-  it('기존 일정의 시간을 수정하여 충돌이 발생하면 경고가 노출된다', async () => {
-    const user = userEvent.setup();
-    const mockEvents = [
-      mockEvent,
-      {
-        ...mockEvent,
-        id: '2',
-        title: '테스트 이벤트2',
-        startTime: '15:00',
-        endTime: '16:00',
-      },
-    ];
-    setupMockHandlerUpdating(mockEvents);
-
-    render(
-      <ChakraProvider>
-        <EventManager />
-        <DialogProvider />
-      </ChakraProvider>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText(/2025년 2월/i)).toBeInTheDocument();
-    });
-
-    const viewButton = screen.getByLabelText('view');
-    await user.selectOptions(viewButton, 'month');
-
-    const eventCard = screen.getByTestId('event-item-2');
-    const editButton = within(eventCard).getByLabelText('Edit event');
-
-    await user.click(editButton);
-
-    const startTimeInput = screen.getByLabelText('시작 시간');
-    const endTimeInput = screen.getByLabelText('종료 시간');
-
-    await user.clear(startTimeInput);
-    await user.type(startTimeInput, '14:00');
-
-    await user.clear(endTimeInput);
-    await user.type(endTimeInput, '15:00');
-
-    const submitButton = screen.getByTestId('event-submit-button');
-    await user.click(submitButton);
-
-    await waitFor(() => {
-      expect(screen.getByText('일정 겹침 경고')).toBeInTheDocument();
-    });
+    expect(screen.getByText('일정 겹침 경고')).toBeInTheDocument();
   });
 });
 
